@@ -154,7 +154,7 @@ footer{ position:relative; z-index:2; text-align:center; padding:36px 24px 56px;
 
 <header class="hero" id="hero">
   <span class="eyebrow">🌍 დაგეგმე მოგზაურობა წამებში</span>
-  <h1>მითხარი სად — <span>დანარჩენს მე გავაკეთებ</span></h1>
+  <h1>მითხარი საით — <span>დანარჩენს მე გავაკეთებ</span></h1>
   <p class="sub">აირჩიე მიმართულება — მიიღებ App-ების ჩამონათვალს (ბილეთები, მატარებელი, ტაქსი, eSIM), დღითი-დღე მარშრუტს, ბიუჯეტს და packing checklist-ს.</p>
 
   <div class="planner glass">
@@ -329,6 +329,24 @@ const DESTS = {
     esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
     nav:[['Google Maps','https://maps.google.com'],['Citymapper','https://citymapper.com']],
     landmarks:['თავისუფლების ქანდაკება','თაიმს სქვერი','სენტრალ პარკი','ემპაირ სტეიტ ბილდინგი','ბრუკლინის ხიდი','MoMA მუზეუმი','ჰაი ლაინი','ბრუკლინის ბრაუნსტოუნები','ბროდვეის შოუ','ჩელსის ბაზრობა']
+  },
+  athens:{ flag:'🇬🇷', name:'ათენი', country:'საბერძნეთი', currency:'EUR (€)', lang:'ბერძნული', plug:'C/F (230V)', visa:'შენგენის ვიზა საჭიროა არა-ევროპელებისთვის', season:'აპრილი–ივნისი, სექტემბერი–ოქტომბერი', climate:'hot',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['Hellenic Train','https://www.hellenictrain.gr'],['Ferryhopper (კუნძულების ბილეთები)','https://www.ferryhopper.com']],
+    local:[['Beat','https://thebeat.co'],['Uber','https://www.uber.com']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
+    nav:[['Google Maps','https://maps.google.com'],['Moovit','https://moovitapp.com']],
+    landmarks:['აკროპოლისი','პართენონი','პლაკას ძველი უბანი','ეროვნული არქეოლოგიური მუზეუმი','სინტაგმას მოედანი','ლიკავიტოსის გორა','ჰეროდეს ატიკუსის ოდეონი','სანტორინის ერთდღიანი ტური','ეგეოსის კუნძულების ferry-ტური','ბერძნული ტავერნა ვახშამი']
+  },
+  lisbon:{ flag:'🇵🇹', name:'ლისაბონი', country:'პორტუგალია', currency:'EUR (€)', lang:'პორტუგალიური', plug:'C/F (230V)', visa:'შენგენის ვიზა საჭიროა არა-ევროპელებისთვის', season:'მარტი–მაისი, სექტემბერი–ოქტომბერი', climate:'mild',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['CP - Comboios de Portugal','https://www.cp.pt'],['Trainline','https://www.thetrainline.com']],
+    local:[['Uber','https://www.uber.com'],['Bolt','https://bolt.eu']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
+    nav:[['Google Maps','https://maps.google.com'],['Citymapper','https://citymapper.com']],
+    landmarks:['ბელემის კოშკი','ჯერონიმოსის მონასტერი','ალფამას ძველი უბანი','ტრამვაი 28-ით მოგზაურობა','LX Factory','სან-ჟორჟის ციხე','სინტრას ერთდღიანი ტური','ტახუს მდინარის სანაპირო','პასტელ დე ნატას დეგუსტაცია','ფადოს მუსიკალური საღამო']
   }
 };
 
@@ -483,4 +501,4 @@ function renderCta(d){
 }
 </script>
 </body>
-</ht
+</html>
