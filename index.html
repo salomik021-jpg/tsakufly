@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TsakuFly — AI მოგზაურობის კონსიერჟი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070b14;
+  --glass: rgba(255,255,255,0.055);
+  --glass-border: rgba(255,255,255,0.12);
+  --text:#f3f5fa;
+  --muted:#92a0b8;
+  --teal:#2dd4bf;
+  --coral:#fb923c;
+  --gold:#fbbf24;
+  --blue:#60a5fa;
+  --pink:#f472b6;
+  --green:#4ade80;
+  --radius:20px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Noto Sans Georgian','Space Grotesk', system-ui, sans-serif;
+  overflow-x:hidden;
+  position:relative;
+}
+.num{ font-family:'Space Grotesk','Noto Sans Georgian',sans-serif; }
+
+.mesh-bg{ position:fixed; inset:0; z-index:0; overflow:hidden; filter:blur(90px); opacity:0.5; pointer-events:none;}
+.blob{ position:absolute; border-radius:50%;}
+.blob1{ width:560px; height:560px; background:radial-gradient(circle, var(--teal), transparent 70%); top:-180px; left:-120px; animation:f1 24s ease-in-out infinite;}
+.blob2{ width:480px; height:480px; background:radial-gradient(circle, var(--coral), transparent 70%); top:20%; right:-160px; animation:f2 28s ease-in-out infinite;}
+.blob3{ width:420px; height:420px; background:radial-gradient(circle, var(--blue), transparent 70%); bottom:-160px; left:25%; animation:f3 26s ease-in-out infinite;}
+@keyframes f1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(70px,60px) scale(1.15);}}
+@keyframes f2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-60px,50px) scale(0.92);}}
+@keyframes f3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(50px,-50px) scale(1.1);}}
+
+.route-canvas{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+.container{ max-width:1100px; margin:0 auto; padding:0 24px; position:relative; z-index:2;}
+nav{ display:flex; align-items:center; justify-content:space-between; padding:26px 24px; max-width:1100px; margin:0 auto; position:relative; z-index:5;}
+.logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.3rem;}
+.logo-mark{ width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg, var(--teal), var(--coral)); display:flex; align-items:center; justify-content:center; font-size:1rem; box-shadow:0 6px 18px rgba(45,212,191,0.35);}
+.nav-tag{ font-size:0.8rem; color:var(--muted); border:1px solid var(--glass-border); padding:6px 14px; border-radius:999px; background:var(--glass); backdrop-filter:blur(10px);}
+
+.glass{ background:var(--glass); border:1px solid var(--glass-border); backdrop-filter:blur(20px) saturate(140%); border-radius:var(--radius);}
+
+.hero{ position:relative; z-index:2; padding:50px 24px 30px; text-align:center;}
+.eyebrow{ display:inline-block; font-size:0.78rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--teal); border:1px solid rgba(45,212,191,0.35); padding:7px 16px; border-radius:999px; background:rgba(45,212,191,0.08); margin-bottom:24px; opacity:0; animation:fadeUp 0.8s ease forwards 0.1s;}
+h1{ font-size:clamp(2.1rem,5vw,3.8rem); font-weight:800; line-height:1.14; letter-spacing:-1px; margin-bottom:16px; opacity:0; animation:fadeUp 0.8s ease forwards 0.25s;}
+h1 span{ background:linear-gradient(120deg, var(--teal), var(--coral) 50%, var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; background-size:200% auto; animation:shine 6s linear infinite;}
+@keyframes shine{to{background-position:200% center;}}
+.hero p.sub{ font-size:1.05rem; color:var(--muted); max-width:560px; margin:0 auto 36px; opacity:0; animation:fadeUp 0.8s ease forwards 0.4s;}
+@keyframes fadeUp{from{opacity:0; transform:translateY(18px);}to{opacity:1; transform:translateY(0);}}
+
+.planner{ max-width:780px; margin:0 auto; padding:26px; opacity:0; animation:fadeUp 0.8s ease forwards 0.55s; box-shadow:0 20px 60px rgba(45,212,191,0.1); text-align:left;}
+.planner-grid{ display:grid; grid-template-columns:1.4fr 1fr 0.8fr; gap:14px; margin-bottom:16px;}
+@media(max-width:680px){ .planner-grid{grid-template-columns:1fr;} }
+.field label{ font-size:0.78rem; color:var(--muted); margin-bottom:7px; display:block; font-weight:600;}
+.field select, .field input{ width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); color:var(--text); padding:11px 13px; border-radius:11px; font-family:inherit; font-size:0.92rem; outline:none;}
+.field select:focus, .field input:focus{ border-color:var(--teal); }
+.style-toggle{ display:flex; gap:8px; margin-bottom:20px;}
+.style-btn{ flex:1; padding:11px; border-radius:11px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.04); color:var(--muted); font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s ease; text-align:center;}
+.style-btn.active{ border-color:var(--teal); color:var(--text); background:rgba(45,212,191,0.12); box-shadow:0 0 0 1px var(--teal) inset;}
+.btn-primary{ width:100%; border:none; cursor:pointer; padding:15px; border-radius:14px; font-size:1rem; font-weight:700; color:#06140f; background:linear-gradient(120deg, var(--teal), var(--gold) 50%, var(--coral)); background-size:200% auto; transition:transform 0.25s ease, box-shadow 0.25s ease, background-position 0.5s ease; box-shadow:0 8px 24px rgba(45,212,191,0.3);}
+.btn-primary:hover{ transform:translateY(-2px); background-position:right center; box-shadow:0 12px 32px rgba(251,146,60,0.35);}
+
+/* THINKING */
+#thinking{ display:none; flex-direction:column; align-items:center; gap:24px; padding:90px 24px; position:relative; z-index:2;}
+.plane-track{ width:260px; height:40px; position:relative;}
+.plane-line{ position:absolute; top:50%; left:0; right:0; height:1px; background:repeating-linear-gradient(90deg, var(--glass-border) 0 8px, transparent 8px 16px);}
+.plane{ position:absolute; top:50%; transform:translateY(-50%); font-size:1.8rem; animation:fly 1.6s ease-in-out infinite;}
+@keyframes fly{0%{left:0;}50%{left:calc(100% - 30px);}100%{left:0;}}
+#thinkingText{ font-size:1rem; color:var(--muted); min-height:1.4em;}
+
+/* RESULTS */
+#results{ display:none; position:relative; z-index:2; padding:20px 24px 100px;}
+.dossier-head{ max-width:920px; margin:0 auto 28px; padding:30px; display:flex; gap:24px; align-items:center; flex-wrap:wrap;}
+.flag-big{ font-size:4rem; line-height:1;}
+.dossier-title{ font-size:1.6rem; font-weight:800; margin-bottom:4px;}
+.dossier-sub{ color:var(--muted); font-size:0.92rem;}
+.facts-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:14px; flex:1; min-width:280px;}
+.fact{ text-align:center;}
+.fact-label{ font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:4px;}
+.fact-val{ font-size:0.92rem; font-weight:700;}
+
+.section{ max-width:920px; margin:0 auto 30px;}
+.section-title{ font-size:1.15rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;}
+
+.appstack{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;}
+.app-cat{ padding:18px;}
+.app-cat-head{ font-size:0.85rem; font-weight:700; color:var(--muted); margin-bottom:12px; display:flex; align-items:center; gap:7px;}
+.app-chip{ display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); padding:7px 12px; border-radius:10px; font-size:0.82rem; margin:0 6px 8px 0; text-decoration:none; color:var(--text); transition:all 0.2s ease;}
+.app-chip:hover{ border-color:var(--teal); background:rgba(45,212,191,0.12); transform:translateY(-1px);}
+
+.timeline{ position:relative; max-width:760px; margin:0 auto;}
+.day-card{ padding:22px; margin-bottom:16px; opacity:0; transform:translateY(16px); transition:opacity 0.6s ease, transform 0.6s ease;}
+.day-card.show{ opacity:1; transform:translateY(0);}
+.day-head{ display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+.day-num{ width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, var(--teal), var(--blue)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem; flex-shrink:0; color:#06140f;}
+.day-label{ font-weight:700; font-size:1.02rem;}
+.day-date{ font-size:0.78rem; color:var(--muted);}
+.slot{ display:flex; gap:12px; padding:9px 0; align-items:flex-start; border-top:1px solid var(--glass-border);}
+.slot:first-of-type{ border-top:none;}
+.slot-icon{ font-size:1.1rem; width:26px; text-align:center; flex-shrink:0;}
+.slot-time{ font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.4px; width:62px; flex-shrink:0; padding-top:2px;}
+.slot-text{ font-size:0.9rem; flex:1;}
+
+.budget-wrap{ display:flex; gap:30px; align-items:center; padding:26px; flex-wrap:wrap;}
+.budget-chart{ flex-shrink:0;}
+.budget-legend{ flex:1; min-width:220px;}
+.legend-row{ display:flex; align-items:center; gap:10px; margin-bottom:11px; font-size:0.88rem;}
+.legend-dot{ width:11px; height:11px; border-radius:3px; flex-shrink:0;}
+.legend-name{ flex:1;}
+.legend-val{ font-weight:700;}
+.budget-total{ text-align:center; margin-top:6px;}
+.budget-total .num{ font-size:1.8rem; font-weight:800; background:linear-gradient(120deg, var(--teal), var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+
+.pack-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; padding:22px;}
+.pack-item{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:10px; cursor:pointer; transition:background 0.15s ease; font-size:0.88rem;}
+.pack-item:hover{ background:rgba(255,255,255,0.05);}
+.pack-check{ width:19px; height:19px; border-radius:6px; border:2px solid var(--glass-border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.7rem; transition:all 0.15s ease;}
+.pack-item.checked .pack-check{ background:var(--teal); border-color:var(--teal); color:#06140f;}
+.pack-item.checked .pack-label{ text-decoration:line-through; color:var(--muted);}
+
+.cta-row{ text-align:center; padding:30px; }
+.cta-links{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:16px;}
+.cta-link{ padding:10px 18px; border-radius:11px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.05); color:var(--text); text-decoration:none; font-size:0.85rem; font-weight:600; transition:all 0.2s ease;}
+.cta-link:hover{ border-color:var(--coral); background:rgba(251,146,60,0.12); transform:translateY(-2px);}
+
+.reset-row{ text-align:center; margin-top:10px;}
+.btn-ghost{ border:1px solid var(--glass-border); background:var(--glass); color:var(--text); cursor:pointer; padding:10px 18px; border-radius:12px; font-size:0.86rem; font-weight:600;}
+.btn-ghost:hover{ background:rgba(255,255,255,0.1);}
+
+footer{ position:relative; z-index:2; text-align:center; padding:36px 24px 56px; color:var(--muted); font-size:0.8rem;}
+.hidden{ display:none !important;}
+</style>
+</head>
+<body>
+
+<canvas class="route-canvas" id="routeCanvas"></canvas>
+<div class="mesh-bg"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div></div>
+
+<nav>
+  <div class="logo"><span class="logo-mark">✈️</span> TsakuFly</div>
+  <div class="nav-tag">AI Travel Concierge · კონცეპტ-პროტოტიპი</div>
+</nav>
+
+<header class="hero" id="hero">
+  <span class="eyebrow">🌍 დაგეგმე მოგზაურობა წამებში</span>
+  <h1>მითხარი სად — <span>დანარჩენს მე გავაკეთებ</span></h1>
+  <p class="sub">აირჩიე მიმართულება — მიიღებ App-ების ჩამონათვალს (ბილეთები, მატარებელი, ტაქსი, eSIM), დღითი-დღე მარშრუტს, ბიუჯეტს და packing checklist-ს.</p>
+
+  <div class="planner glass">
+    <div class="planner-grid">
+      <div class="field">
+        <label>📍 მიმართულება</label>
+        <select id="destSelect"></select>
+      </div>
+      <div class="field">
+        <label>📅 დაწყების თარიღი</label>
+        <input type="date" id="startDate">
+      </div>
+      <div class="field">
+        <label>🗓️ დღეები</label>
+        <input type="number" id="tripDays" min="1" max="14" value="5">
+      </div>
+    </div>
+    <label style="font-size:0.78rem; color:var(--muted); margin-bottom:7px; display:block; font-weight:600;">💰 მოგზაურობის სტილი</label>
+    <div class="style-toggle">
+      <div class="style-btn" data-style="0.6">🎒 ბიუჯეტური</div>
+      <div class="style-btn active" data-style="1">🧳 კომფორტული</div>
+      <div class="style-btn" data-style="1.8">💎 ლუქს</div>
+    </div>
+    <button class="btn-primary" id="generateBtn">✨ ააწყვე ჩემი მოგზაურობა</button>
+  </div>
+</header>
+
+<section id="thinking">
+  <div class="plane-track"><div class="plane-line"></div><div class="plane">✈️</div></div>
+  <div id="thinkingText" class="num">ვამოწმებ ვიზის მოთხოვნებს...</div>
+</section>
+
+<section id="results">
+  <div class="dossier-head glass">
+    <div class="flag-big" id="dFlag">🌍</div>
+    <div style="flex-shrink:0; min-width:180px;">
+      <div class="dossier-title" id="dTitle">დანიშნულება</div>
+      <div class="dossier-sub" id="dSub">ქვეყანა</div>
+    </div>
+    <div class="facts-grid" id="factsGrid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📲 შენი App Stack</div>
+    <div class="appstack" id="appstack"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🗺️ დღითი-დღე მარშრუტი</div>
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title glass" style="padding:18px 22px; margin-bottom:0;">💰 სავარაუდო ბიუჯეტი</div>
+    <div class="budget-wrap glass" style="border-top:none; border-top-left-radius:0; border-top-right-radius:0;">
+      <div class="budget-chart">
+        <svg width="160" height="160" viewBox="0 0 160 160" id="budgetSvg"></svg>
+      </div>
+      <div class="budget-legend" id="budgetLegend"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🎒 Packing Checklist</div>
+    <div class="pack-grid glass" id="packGrid"></div>
+  </div>
+
+  <div class="cta-row glass section">
+    <div class="section-title" style="justify-content:center;">მზად ხარ დასაჯავშნად?</div>
+    <div class="dossier-sub">ოფიციალური საიტები — დაჯავშნე პირდაპირ</div>
+    <div class="cta-links" id="ctaLinks"></div>
+  </div>
+
+  <div class="reset-row">
+    <button class="btn-ghost" id="resetBtn">↺ ახალი მოგზაურობა</button>
+  </div>
+</section>
+
+<footer>ეს არის ინტერაქტიული <strong>კონცეპტ-პროტოტიპი</strong> — მარშრუტი და ბიუჯეტი გენერირებულია ლოკალური მონაცემებით დემოსთვის. რეალურ ვერსიაში მარშრუტი/ფასები AI-სა და ცოცხალი booking API-ების მეშვეობით განახლდება.</footer>
+
+<script>
+/* ---------- Route canvas background ---------- */
+const canvas = document.getElementById('routeCanvas');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+let dots = [];
+for(let i=0;i<40;i++){ dots.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-0.5)*0.12,vy:(Math.random()-0.5)*0.12,r:Math.random()*1.6+0.5}); }
+function tick(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  dots.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0;
+    if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(45,212,191,0.35)'; ctx.fill();
+  });
+  requestAnimationFrame(tick);
+}
+tick();
+
+/* ---------- Destination database ---------- */
+const DESTS = {
+  paris:{ flag:'🇫🇷', name:'პარიზი', country:'საფრანგეთი', currency:'EUR (€)', lang:'ფრანგული', plug:'C/E (230V)', visa:'შენგენის ვიზა საჭიროა არა-ევროპელებისთვის', season:'აპრილი–ივნისი, სექტემბერი–ოქტომბერი', climate:'mild',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['Trainline','https://www.thetrainline.com'],['SNCF Connect','https://www.sncf-connect.com']],
+    local:[['Uber','https://www.uber.com'],['Bolt','https://bolt.eu']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
+    nav:[['Google Maps','https://maps.google.com'],['Citymapper','https://citymapper.com']],
+    landmarks:['ეიფელის კოშკი','ლუვრი','მონმარტრი და საკრე-კერი','სენის სანაპიროზე გასეირნება','ორსეს მუზეუმი','ლუქსემბურგის ბაღები','შანზელიზე','ნოტრ-დამის ტაძარი','ლათინური კვარტალი','ადგილობრივი ბაზრობა Marché']
+  },
+  rome:{ flag:'🇮🇹', name:'რომი', country:'იტალია', currency:'EUR (€)', lang:'იტალიური', plug:'C/F (230V)', visa:'შენგენის ვიზა საჭიროა არა-ევროპელებისთვის', season:'აპრილი–ივნისი, სექტემბერი–ოქტომბერი', climate:'mild',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['Trenitalia','https://www.trenitalia.com'],['Italo','https://www.italotreno.it']],
+    local:[['Uber','https://www.uber.com'],['FreeNow','https://www.free-now.com']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
+    nav:[['Google Maps','https://maps.google.com'],['Moovit','https://moovitapp.com']],
+    landmarks:['კოლიზეუმი','ვატიკანის მუზეუმები','ტრევის შადრევანი','პანთეონი','ესპანური კიბეები','ტრასტევერეს უბანი','ბორგეზეს გალერეა','ფორუმ რომანუმი','ჯელატო ტური','ნავონას მოედანი']
+  },
+  tokyo:{ flag:'🇯🇵', name:'ტოკიო', country:'იაპონია', currency:'JPY (¥)', lang:'იაპონური', plug:'A/B (100V)', visa:'ბევრი ქვეყნისთვის უვიზო რეჟიმი 90 დღემდე', season:'მარტი–მაისი, ოქტომბერი–ნოემბერი', climate:'mild',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['Japan Rail Pass','https://www.jrpass.com'],['Navitime Japan Travel','https://world.navitime.com']],
+    local:[['GO Taxi','https://go.mo-t.com'],['Suica/Pasmo IC ბარათი','https://www.jreast.co.jp/e/pass/suica.html']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Sakura Mobile','https://www.sakuramobile.jp']],
+    nav:[['Google Maps','https://maps.google.com'],['Japan Transit Planner','https://world.jorudan.co.jp']],
+    landmarks:['შიბუია კროსინგი','სენსო-ჯის ტაძარი','ცუკიჯის ბაზრობა','აკიჰაბარა','მეიჯის სალოცავი','ტოკიო სკაიტრი','ჰარაჯუკუს ქუჩები','შინჯუკუ გიოენის პარკი','რამენ-ბარი','ღამის ხედი ტოკიო თაუერიდან']
+  },
+  bangkok:{ flag:'🇹🇭', name:'ბანგკოკი', country:'ტაილანდი', currency:'THB (฿)', lang:'ტაი', plug:'A/B/C (220V)', visa:'უვიზო რეჟიმი ბევრი ქვეყნისთვის 30 დღემდე', season:'ნოემბერი–თებერვალი', climate:'hot',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['12Go Asia','https://12go.asia'],['State Railway of Thailand','https://www.railway.co.th']],
+    local:[['Grab','https://www.grab.com'],['Bolt','https://bolt.eu']],
+    stay:[['Booking.com','https://www.booking.com'],['Agoda','https://www.agoda.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
+    nav:[['Google Maps','https://maps.google.com'],['Moovit','https://moovitapp.com']],
+    landmarks:['დიდი სასახლე','ვატ არუნი','ჩატუჩაკის ბაზრობა','ცურვითი ბაზრობა','ხაო სან როუდი','ვატ ფო','BTS Skytrain ტური','street food ტური ჩინაუნში','ჩაო ფრაიას მდინარის კრუიზი','ლუმფინის პარკი']
+  },
+  tbilisi:{ flag:'🇬🇪', name:'თბილისი', country:'საქართველო', currency:'GEL (₾)', lang:'ქართული', plug:'C/F (220V)', visa:'უვიზო რეჟიმი ბევრი ქვეყნისთვის 1 წლამდე', season:'მაისი–ივნისი, სექტემბერი–ოქტომბერი', climate:'mild',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['Georgian Railway','https://www.railway.ge'],['12Go Asia','https://12go.asia']],
+    local:[['Bolt','https://bolt.eu'],['Yandex Go','https://go.yandex.com']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Magti/Silknet ადგილობრივი SIM','https://www.magticom.ge']],
+    nav:[['Google Maps','https://maps.google.com'],['Moovit','https://moovitapp.com']],
+    landmarks:['ძველი თბილისი და აბანოები','ნარიყალას ციხე','საბურთალოს ბაზრობა','რკინის ხიდი','მცხეთის ტური','ფუნიკულიორი','ბათუმის ერთდღიანი ტური','ღვინის დეგუსტაცია','შარდენის ქუჩა','თბილისის სოფელი']
+  },
+  barcelona:{ flag:'🇪🇸', name:'ბარსელონა', country:'ესპანეთი', currency:'EUR (€)', lang:'ესპანური/კატალანური', plug:'C/F (230V)', visa:'შენგენის ვიზა საჭიროა არა-ევროპელებისთვის', season:'მაისი–ივნისი, სექტემბერი', climate:'mild',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['Renfe','https://www.renfe.com'],['Trainline','https://www.thetrainline.com']],
+    local:[['Uber','https://www.uber.com'],['FreeNow','https://www.free-now.com']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
+    nav:[['Google Maps','https://maps.google.com'],['Citymapper','https://citymapper.com']],
+    landmarks:['საგრადა ფამილია','პარკ გუელი','ლას რამბლას','გოთური კვარტალი','ბარსელონეტას პლაჟი','კასა ბატლო','ბოკერიას ბაზრობა','მონტჟუიკის გორაკი','ტაპას ტური','კამპ ნოუ']
+  },
+  istanbul:{ flag:'🇹🇷', name:'სტამბული', country:'თურქეთი', currency:'TRY (₺)', lang:'თურქული', plug:'C/F (230V)', visa:'e-Visa ან უვიზო ბევრი ქვეყნისთვის', season:'აპრილი–მაისი, სექტემბერი–ოქტომბერი', climate:'mild',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['TCDD Taşımacılık','https://www.tcddtasimacilik.gov.tr'],['Trainline','https://www.thetrainline.com']],
+    local:[['BiTaksi','https://www.bitaksi.com'],['Uber','https://www.uber.com']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
+    nav:[['Google Maps','https://maps.google.com'],['Moovit','https://moovitapp.com']],
+    landmarks:['აია სოფია','მზის ცისფერი მეჩეთი','დიდი ბაზარი','თოფქაფის სასახლე','ბოსფორის კრუიზი','გალატას კოშკი','სანდუღის ბაზარი','ბალათის ფერადი ქუჩები','ადგილობრივი ჰამამი','კადიქოის უბანი']
+  },
+  newyork:{ flag:'🇺🇸', name:'ნიუ-იორკი', country:'აშშ', currency:'USD ($)', lang:'ინგლისური', plug:'A/B (120V)', visa:'ESTA ან ვიზა საჭიროა', season:'აპრილი–ივნისი, სექტემბერი–ნოემბერი', climate:'varied',
+    flights:[['Google Flights','https://www.google.com/travel/flights'],['Skyscanner','https://www.skyscanner.com']],
+    trains:[['Amtrak','https://www.amtrak.com'],['MTA (მეტრო)','https://new.mta.info']],
+    local:[['Uber','https://www.uber.com'],['Lyft','https://www.lyft.com']],
+    stay:[['Booking.com','https://www.booking.com'],['Airbnb','https://www.airbnb.com']],
+    esim:[['Airalo','https://www.airalo.com'],['Holafly','https://holafly.com']],
+    nav:[['Google Maps','https://maps.google.com'],['Citymapper','https://citymapper.com']],
+    landmarks:['თავისუფლების ქანდაკება','თაიმს სქვერი','სენტრალ პარკი','ემპაირ სტეიტ ბილდინგი','ბრუკლინის ხიდი','MoMA მუზეუმი','ჰაი ლაინი','ბრუკლინის ბრაუნსტოუნები','ბროდვეის შოუ','ჩელსის ბაზრობა']
+  }
+};
+
+const destSelect = document.getElementById('destSelect');
+Object.entries(DESTS).forEach(([key,d])=>{
+  const opt = document.createElement('option');
+  opt.value = key; opt.textContent = `${d.flag} ${d.name}, ${d.country}`;
+  destSelect.appendChild(opt);
+});
+
+document.getElementById('startDate').valueAsDate = new Date(Date.now()+14*86400000);
+
+let style = 1;
+document.querySelectorAll('.style-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.style-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    style = parseFloat(btn.dataset.style);
+  });
+});
+
+/* ---------- Generate ---------- */
+const thinking = document.getElementById('thinking');
+const results = document.getElementById('results');
+const thinkingText = document.getElementById('thinkingText');
+const msgs = ['ვამოწმებ ვიზის მოთხოვნებს...','ვეძებ საუკეთესო ფრენებს...','ვადგენ დღითი-დღე მარშრუტს...','ვითვლი ბიუჯეტს...','ვალაგებ packing checklist-ს...'];
+
+document.getElementById('generateBtn').addEventListener('click', ()=>{
+  thinking.style.display='flex';
+  results.style.display='none';
+  thinking.scrollIntoView({behavior:'smooth', block:'center'});
+  let i=0; thinkingText.textContent = msgs[0];
+  const iv = setInterval(()=>{ i++; if(i<msgs.length) thinkingText.textContent = msgs[i]; }, 500);
+  setTimeout(()=>{
+    clearInterval(iv);
+    thinking.style.display='none';
+    render();
+    results.style.display='block';
+    results.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 500*msgs.length+300);
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  results.style.display='none';
+  document.getElementById('hero').scrollIntoView({behavior:'smooth'});
+});
+
+function render(){
+  const d = DESTS[destSelect.value];
+  const days = Math.max(1, Math.min(14, parseInt(document.getElementById('tripDays').value)||5));
+  const startDate = document.getElementById('startDate').valueAsDate || new Date();
+
+  document.getElementById('dFlag').textContent = d.flag;
+  document.getElementById('dTitle').textContent = `${d.name}, ${d.country}`;
+  document.getElementById('dSub').textContent = `${days} დღიანი მოგზაურობა`;
+
+  const facts = [
+    ['ვალუტა', d.currency], ['ენა', d.lang], ['ჩამრთველი', d.plug],
+    ['ვიზა', d.visa], ['საუკეთესო სეზონი', d.season]
+  ];
+  document.getElementById('factsGrid').innerHTML = facts.map(f=>`<div class="fact"><div class="fact-label">${f[0]}</div><div class="fact-val">${f[1]}</div></div>`).join('');
+
+  const appCats = [
+    ['✈️ ფრენები', d.flights], ['🚆 მატარებელი/ავტობუსი', d.trains], ['🚕 ადგილობრივი ტრანსპორტი', d.local],
+    ['🏨 საცხოვრებელი', d.stay], ['📶 eSIM / ინტერნეტი', d.esim], ['🗺️ ნავიგაცია', d.nav]
+  ];
+  document.getElementById('appstack').innerHTML = appCats.map(([label,apps])=>`
+    <div class="app-cat glass">
+      <div class="app-cat-head">${label}</div>
+      <div>${apps.map(([name,url])=>`<a class="app-chip" href="${url}" target="_blank" rel="noopener">🔗 ${name}</a>`).join('')}</div>
+    </div>
+  `).join('');
+
+  const timeline = document.getElementById('timeline');
+  timeline.innerHTML = '';
+  const slots = [['☀️','დილა'],['🌤️','შუადღე'],['🌙','საღამო']];
+  for(let day=0; day<days; day++){
+    const date = new Date(startDate.getTime()+day*86400000);
+    const dateStr = date.toLocaleDateString('ka-GE',{day:'numeric',month:'long'});
+    const items = [];
+    for(let s=0;s<3;s++){
+      const idx = (day*3+s) % d.landmarks.length;
+      items.push(d.landmarks[idx]);
+    }
+    const card = document.createElement('div');
+    card.className = 'day-card glass';
+    card.innerHTML = `
+      <div class="day-head">
+        <div class="day-num num">${day+1}</div>
+        <div><div class="day-label">დღე ${day+1}</div><div class="day-date">${dateStr}</div></div>
+      </div>
+      ${slots.map((sl,i)=>`<div class="slot"><div class="slot-icon">${sl[0]}</div><div class="slot-time">${sl[1]}</div><div class="slot-text">${items[i]}</div></div>`).join('')}
+    `;
+    timeline.appendChild(card);
+    setTimeout(()=>card.classList.add('show'), 70*day);
+  }
+
+  renderBudget(d, days);
+  renderPacking(d);
+  renderCta(d);
+}
+
+function renderBudget(d, days){
+  const base = { 'ფრენა':350, 'საცხოვრებელი':70, 'საკვები':30, 'ტრანსპორტი':12, 'აქტივობები':25 };
+  const colors = { 'ფრენა':'#2dd4bf', 'საცხოვრებელი':'#fb923c', 'საკვები':'#fbbf24', 'ტრანსპორტი':'#60a5fa', 'აქტივობები':'#f472b6' };
+  const vals = {};
+  vals['ფრენა'] = Math.round(base['ფრენა']*style);
+  ['საცხოვრებელი','საკვები','ტრანსპორტი','აქტივობები'].forEach(k=> vals[k] = Math.round(base[k]*style*days));
+  const total = Object.values(vals).reduce((a,b)=>a+b,0);
+
+  const legend = document.getElementById('budgetLegend');
+  legend.innerHTML = Object.entries(vals).map(([k,v])=>`
+    <div class="legend-row"><span class="legend-dot" style="background:${colors[k]}"></span><span class="legend-name">${k}</span><span class="legend-val num">$${v.toLocaleString()}</span></div>
+  `).join('') + `<div class="budget-total">სულ ჯამში <span class="num">$${total.toLocaleString()}</span></div>`;
+
+  const svg = document.getElementById('budgetSvg');
+  let offset = 0;
+  const r=70, cx=80, cy=80, circ=2*Math.PI*r;
+  let circles = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="18"/>`;
+  Object.entries(vals).forEach(([k,v])=>{
+    const frac = v/total;
+    const len = frac*circ;
+    circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[k]}" stroke-width="18" stroke-dasharray="${len} ${circ-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"/>`;
+    offset += len;
+  });
+  svg.innerHTML = circles + `<text x="80" y="85" text-anchor="middle" font-size="18" font-weight="700" fill="#f3f5fa" font-family="Space Grotesk">$${total.toLocaleString()}</text>`;
+}
+
+const PACK_BASE = ['პასპორტი + ასლები','ბარათები + ცოტა ნაღდი ფული','ტელეფონის დამტენი','საერთაშორისო ადაპტერი','დაზღვევის პოლისი','მზის სათვალე','საბანკო/SOS საკონტაქტო სია'];
+const PACK_CLIMATE = {
+  mild:['მსუბუქი ჟაკეტი','მოსახერხებელი ფეხსაცმელი','ქოლგა','შარფი საღამოსთვის'],
+  hot:['მზის კრემი','მსუბუქი, ქსოვილოვანი ტანსაცმელი','კაპელუში','წყლის ბოთლი'],
+  cold:['თბილი ქურთუკი','ხელთათმანები და ქუდი','თერმული ფენები','ცხელი ჩაის ტერმოსი'],
+  varied:['ფენებად ჩაცმის კომპლექტი','წყალგამძლე ქურთუკი','მოსახერხებელი ფეხსაცმელი','მცირე ქოლგა']
+};
+function renderPacking(d){
+  const items = [...PACK_BASE, ...PACK_CLIMATE[d.climate]];
+  const grid = document.getElementById('packGrid');
+  grid.innerHTML = items.map((it,i)=>`
+    <div class="pack-item" data-i="${i}"><span class="pack-check">✓</span><span class="pack-label">${it}</span></div>
+  `).join('');
+  grid.querySelectorAll('.pack-item').forEach(el=>{
+    el.addEventListener('click', ()=> el.classList.toggle('checked'));
+  });
+}
+
+function renderCta(d){
+  const all = [...d.flights, ...d.trains, ...d.stay];
+  const seen = new Set();
+  const unique = all.filter(([n,u])=>{ if(seen.has(n)) return false; seen.add(n); return true; });
+  document.getElementById('ctaLinks').innerHTML = unique.map(([n,u])=>`<a class="cta-link" href="${u}" target="_blank" rel="noopener">${n} ↗</a>`).join('');
+}
+</script>
+</body>
+</ht
