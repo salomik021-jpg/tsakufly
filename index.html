@@ -65,6 +65,20 @@ h1 span{ background:linear-gradient(120deg, var(--teal), var(--coral) 50%, var(-
 .field label{ font-size:0.78rem; color:var(--muted); margin-bottom:7px; display:block; font-weight:600;}
 .field select, .field input{ width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); color:var(--text); padding:11px 13px; border-radius:11px; font-family:inherit; font-size:0.92rem; outline:none;}
 .field select:focus, .field input:focus{ border-color:var(--teal); }
+
+.dest-dropdown{ position:relative; }
+.dest-trigger{ width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); color:var(--text); padding:11px 13px; border-radius:11px; font-family:inherit; font-size:0.92rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; transition:border-color 0.2s ease; }
+.dest-trigger:hover{ border-color:rgba(45,212,191,0.5); }
+.dest-dropdown.open .dest-trigger{ border-color:var(--teal); }
+.dest-chevron{ color:var(--muted); font-size:0.8rem; transition:transform 0.2s ease; flex-shrink:0; }
+.dest-dropdown.open .dest-chevron{ transform:rotate(180deg); color:var(--teal); }
+.dest-list{ position:absolute; top:calc(100% + 8px); left:0; right:0; max-height:280px; overflow-y:auto; background:#0d1220; border:1px solid var(--glass-border); border-radius:12px; z-index:60; box-shadow:0 24px 60px rgba(0,0,0,0.55); opacity:0; visibility:hidden; transform:translateY(-6px); transition:opacity 0.18s ease, transform 0.18s ease; padding:6px; }
+.dest-dropdown.open .dest-list{ opacity:1; visibility:visible; transform:translateY(0); }
+.dest-item{ padding:10px 12px; cursor:pointer; display:flex; align-items:center; gap:10px; font-size:0.9rem; border-radius:8px; transition:background 0.15s ease; color:var(--text); }
+.dest-item:hover{ background:rgba(45,212,191,0.14); }
+.dest-item.active{ background:rgba(45,212,191,0.22); color:var(--teal); font-weight:600; }
+.dest-item-flag{ font-size:1.15rem; flex-shrink:0; }
+
 .style-toggle{ display:flex; gap:8px; margin-bottom:20px;}
 .style-btn{ flex:1; padding:11px; border-radius:11px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.04); color:var(--muted); font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s ease; text-align:center;}
 .style-btn.active{ border-color:var(--teal); color:var(--text); background:rgba(45,212,191,0.12); box-shadow:0 0 0 1px var(--teal) inset;}
@@ -161,7 +175,13 @@ footer{ position:relative; z-index:2; text-align:center; padding:36px 24px 56px;
     <div class="planner-grid">
       <div class="field">
         <label>📍 მიმართულება</label>
-        <select id="destSelect"></select>
+        <div class="dest-dropdown" id="destDropdown">
+          <div class="dest-trigger" id="destTrigger">
+            <span id="destTriggerLabel">აირჩიე ქალაქი</span>
+            <span class="dest-chevron">▾</span>
+          </div>
+          <div class="dest-list" id="destList"></div>
+        </div>
       </div>
       <div class="field">
         <label>📅 დაწყების თარიღი</label>
@@ -350,12 +370,40 @@ const DESTS = {
   }
 };
 
-const destSelect = document.getElementById('destSelect');
-Object.entries(DESTS).forEach(([key,d])=>{
-  const opt = document.createElement('option');
-  opt.value = key; opt.textContent = `${d.flag} ${d.name}, ${d.country}`;
-  destSelect.appendChild(opt);
+let selectedDest = Object.keys(DESTS)[0];
+const destDropdown = document.getElementById('destDropdown');
+const destTrigger = document.getElementById('destTrigger');
+const destTriggerLabel = document.getElementById('destTriggerLabel');
+const destList = document.getElementById('destList');
+
+function renderDestList(){
+  destList.innerHTML = Object.entries(DESTS).map(([key,d])=>`
+    <div class="dest-item ${key===selectedDest?'active':''}" data-key="${key}">
+      <span class="dest-item-flag">${d.flag}</span><span>${d.name}, ${d.country}</span>
+    </div>
+  `).join('');
+  destList.querySelectorAll('.dest-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      selectedDest = item.dataset.key;
+      updateDestTrigger();
+      destDropdown.classList.remove('open');
+      renderDestList();
+    });
+  });
+}
+function updateDestTrigger(){
+  const d = DESTS[selectedDest];
+  destTriggerLabel.textContent = `${d.flag} ${d.name}, ${d.country}`;
+}
+destTrigger.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  destDropdown.classList.toggle('open');
 });
+document.addEventListener('click', (e)=>{
+  if(!destDropdown.contains(e.target)) destDropdown.classList.remove('open');
+});
+updateDestTrigger();
+renderDestList();
 
 document.getElementById('startDate').valueAsDate = new Date(Date.now()+14*86400000);
 
@@ -395,7 +443,7 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
 });
 
 function render(){
-  const d = DESTS[destSelect.value];
+  const d = DESTS[selectedDest];
   const days = Math.max(1, Math.min(14, parseInt(document.getElementById('tripDays').value)||5));
   const startDate = document.getElementById('startDate').valueAsDate || new Date();
 
