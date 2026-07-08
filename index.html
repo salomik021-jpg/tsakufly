@@ -84,6 +84,7 @@ h1 span{ background:linear-gradient(120deg, var(--teal), var(--coral) 50%, var(-
 .style-btn.active{ border-color:var(--teal); color:var(--text); background:rgba(45,212,191,0.12); box-shadow:0 0 0 1px var(--teal) inset;}
 .btn-primary{ width:100%; border:none; cursor:pointer; padding:15px; border-radius:14px; font-size:1rem; font-weight:700; color:#06140f; background:linear-gradient(120deg, var(--teal), var(--gold) 50%, var(--coral)); background-size:200% auto; transition:transform 0.25s ease, box-shadow 0.25s ease, background-position 0.5s ease; box-shadow:0 8px 24px rgba(45,212,191,0.3);}
 .btn-primary:hover{ transform:translateY(-2px); background-position:right center; box-shadow:0 12px 32px rgba(251,146,60,0.35);}
+.btn-primary:disabled{ opacity:0.6; cursor:not-allowed; transform:none;}
 
 /* THINKING */
 #thinking{ display:none; flex-direction:column; align-items:center; gap:24px; padding:90px 24px; position:relative; z-index:2;}
@@ -106,6 +107,10 @@ h1 span{ background:linear-gradient(120deg, var(--teal), var(--coral) 50%, var(-
 
 .section{ max-width:920px; margin:0 auto 30px;}
 .section-title{ font-size:1.15rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px;}
+
+.data-badge{ display:inline-flex; align-items:center; gap:6px; font-size:0.72rem; font-weight:700; padding:4px 10px; border-radius:999px; margin-left:auto; letter-spacing:0.2px;}
+.data-badge.ai{ color:#06140f; background:linear-gradient(120deg, var(--teal), var(--gold)); }
+.data-badge.demo{ color:var(--muted); background:rgba(255,255,255,0.08); border:1px solid var(--glass-border);}
 
 .appstack{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;}
 .app-cat{ padding:18px;}
@@ -223,7 +228,10 @@ footer{ position:relative; z-index:2; text-align:center; padding:36px 24px 56px;
   </div>
 
   <div class="section">
-    <div class="section-title">🗺️ დღითი-დღე მარშრუტი</div>
+    <div class="section-title">
+      🗺️ დღითი-დღე მარშრუტი
+      <span class="data-badge" id="routeBadge"></span>
+    </div>
     <div class="timeline" id="timeline"></div>
   </div>
 
@@ -253,7 +261,7 @@ footer{ position:relative; z-index:2; text-align:center; padding:36px 24px 56px;
   </div>
 </section>
 
-<footer>ეს არის ინტერაქტიული <strong>კონცეპტ-პროტოტიპი</strong> — მარშრუტი და ბიუჯეტი გენერირებულია ლოკალური მონაცემებით დემოსთვის. რეალურ ვერსიაში მარშრუტი/ფასები AI-სა და ცოცხალი booking API-ების მეშვეობით განახლდება.</footer>
+<footer>ეს არის ინტერაქტიული <strong>კონცეპტ-პროტოტიპი</strong>. დღითი-დღე მარშრუტი გენერირდება ცოცხლად Claude AI-ის მეშვეობით (თუ სერვისი მიუწვდომელია, ნაჩვენებია ლოკალური სადემონსტრაციო მონაცემები). ბიუჯეტი და ფასები კვლავ სადემონსტრაციო/სავარაუდო მონაცემებია — რეალურ ვერსიაში ეს ცოცხალი booking API-ებით განახლდება.</footer>
 
 <script>
 /* ---------- Route canvas background ---------- */
@@ -416,25 +424,54 @@ document.querySelectorAll('.style-btn').forEach(btn=>{
   });
 });
 
+/* ---------- AI itinerary fetch (with local fallback) ---------- */
+async function fetchAiItinerary(d, days, style){
+  try{
+    const resp = await fetch('/.netlify/functions/generate-itinerary', {
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body: JSON.stringify({ destination:d.name, country:d.country, days, style })
+    });
+    if(!resp.ok) throw new Error('AI service returned ' + resp.status);
+    const data = await resp.json();
+    if(!data || !Array.isArray(data.days) || data.days.length === 0) throw new Error('unexpected AI response shape');
+    return data.days;
+  }catch(err){
+    console.warn('AI itinerary unavailable, falling back to local demo data:', err.message);
+    return null; // signals caller to use local fallback
+  }
+}
+
 /* ---------- Generate ---------- */
 const thinking = document.getElementById('thinking');
 const results = document.getElementById('results');
 const thinkingText = document.getElementById('thinkingText');
-const msgs = ['ვამოწმებ ვიზის მოთხოვნებს...','ვეძებ საუკეთესო ფრენებს...','ვადგენ დღითი-დღე მარშრუტს...','ვითვლი ბიუჯეტს...','ვალაგებ packing checklist-ს...'];
+const generateBtn = document.getElementById('generateBtn');
+const msgs = ['ვამოწმებ ვიზის მოთხოვნებს...','ვეძებ საუკეთესო ფრენებს...','AI ადგენს დღითი-დღე მარშრუტს...','ვითვლი ბიუჯეტს...','ვალაგებ packing checklist-ს...'];
 
-document.getElementById('generateBtn').addEventListener('click', ()=>{
+generateBtn.addEventListener('click', async ()=>{
+  generateBtn.disabled = true;
   thinking.style.display='flex';
   results.style.display='none';
   thinking.scrollIntoView({behavior:'smooth', block:'center'});
   let i=0; thinkingText.textContent = msgs[0];
   const iv = setInterval(()=>{ i++; if(i<msgs.length) thinkingText.textContent = msgs[i]; }, 500);
-  setTimeout(()=>{
-    clearInterval(iv);
-    thinking.style.display='none';
-    render();
-    results.style.display='block';
-    results.scrollIntoView({behavior:'smooth', block:'start'});
-  }, 500*msgs.length+300);
+
+  const d = DESTS[selectedDest];
+  const days = Math.max(1, Math.min(14, parseInt(document.getElementById('tripDays').value)||5));
+
+  // Run the minimum "thinking" animation and the real AI call in parallel,
+  // so the UI never looks broken even if the API responds instantly (or slowly).
+  const minWait = new Promise(res=> setTimeout(res, 500*msgs.length+300));
+  const aiCall = fetchAiItinerary(d, days, style);
+  const [, aiDays] = await Promise.all([minWait, aiCall]);
+
+  clearInterval(iv);
+  thinking.style.display='none';
+  render(aiDays);
+  results.style.display='block';
+  results.scrollIntoView({behavior:'smooth', block:'start'});
+  generateBtn.disabled = false;
 });
 
 document.getElementById('resetBtn').addEventListener('click', ()=>{
@@ -442,14 +479,24 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
   document.getElementById('hero').scrollIntoView({behavior:'smooth'});
 });
 
-function render(){
+function render(aiDays){
   const d = DESTS[selectedDest];
   const days = Math.max(1, Math.min(14, parseInt(document.getElementById('tripDays').value)||5));
   const startDate = document.getElementById('startDate').valueAsDate || new Date();
+  const usingAi = Array.isArray(aiDays) && aiDays.length > 0;
 
   document.getElementById('dFlag').textContent = d.flag;
   document.getElementById('dTitle').textContent = `${d.name}, ${d.country}`;
   document.getElementById('dSub').textContent = `${days} დღიანი მოგზაურობა`;
+
+  const badge = document.getElementById('routeBadge');
+  if(usingAi){
+    badge.textContent = '✨ AI-გენერირებული';
+    badge.className = 'data-badge ai';
+  } else {
+    badge.textContent = 'დემო მონაცემები';
+    badge.className = 'data-badge demo';
+  }
 
   const facts = [
     ['ვალუტა', d.currency], ['ენა', d.lang], ['ჩამრთველი', d.plug],
@@ -474,10 +521,15 @@ function render(){
   for(let day=0; day<days; day++){
     const date = new Date(startDate.getTime()+day*86400000);
     const dateStr = date.toLocaleDateString('ka-GE',{day:'numeric',month:'long'});
-    const items = [];
-    for(let s=0;s<3;s++){
-      const idx = (day*3+s) % d.landmarks.length;
-      items.push(d.landmarks[idx]);
+    let items;
+    if(usingAi && aiDays[day]){
+      items = [aiDays[day].morning || '—', aiDays[day].afternoon || '—', aiDays[day].evening || '—'];
+    } else {
+      items = [];
+      for(let s=0;s<3;s++){
+        const idx = (day*3+s) % d.landmarks.length;
+        items.push(d.landmarks[idx]);
+      }
     }
     const card = document.createElement('div');
     card.className = 'day-card glass';
